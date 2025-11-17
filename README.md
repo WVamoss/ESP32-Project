@@ -1,6 +1,6 @@
-# ESP32-Project
+# **ESP32-Project**
 
-# 🟩 GAMBARAN UMUM
+# 🟩 **GAMBARAN UMUM**
 
 Sistem ini mensimulasikan **mesin antrian loket**, tapi disederhanakan supaya bisa jalan di Wokwi **tanpa servo** → pintu loket diganti LED.
 
@@ -10,7 +10,7 @@ Komponen yang digunakan:
 * **Button (SW encoder)** = sebagai tombol "NEXT / AMBIL NOMOR"
 * **OLED** = menampilkan nomor antrian
 * **LED Hijau/Kuning/Merah** = status loket
-* **LED Pintu (GPIO 15)** = simulasi pembukaan pintu
+* **LED Pintu (GPIO 15 Blue)** = simulasi pembukaan pintu
 * **Buzzer** = bunyi ketika memanggil nomor
 
 ---
@@ -217,5 +217,4 @@ Semua efek dimatikan.
 * mode prioritas (VIP / reguler)
 * tampilan OLED lebih keren
 * multi-loket (loket 1,2,3)
-
-Tinggal bilang mau fitur apa 👍
+�
