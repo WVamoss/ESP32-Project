@@ -3,26 +3,34 @@
 #include <Adafruit_SSD1306.h>
 #include <Encoder.h>
 
+// ==============================
+// PIN DEFINISI
+// ==============================
 #define LED_HIJAU   1
 #define LED_KUNING  3
 #define LED_MERAH   2
 #define BUZZER      4
-#define LED_PINTU   15   // pengganti servo
+#define LED_PINTU   15   // pengganti servo (indikator pintu)
 
-// Encoder
 #define CLK 6
 #define DT  7
 #define SW  8
 
+// ==============================
+// OBJEK
+// ==============================
 Encoder enc(CLK, DT);
-
 Adafruit_SSD1306 oled(128, 64, &Wire, -1);
 
 long lastNumber = 0;
 long currentNumber = 0;
 
 bool loketBuka = false;
+long lastPos = 0;
 
+// ==============================
+// SETUP
+// ==============================
 void setup() {
   Serial.begin(115200);
 
@@ -31,7 +39,6 @@ void setup() {
   pinMode(LED_MERAH, OUTPUT);
   pinMode(BUZZER, OUTPUT);
   pinMode(LED_PINTU, OUTPUT);
-
   pinMode(SW, INPUT_PULLUP);
 
   // OLED
@@ -43,6 +50,9 @@ void setup() {
   displayInfo("Sistem Antrian", "Loket TUTUP");
 }
 
+// ==============================
+// LOOP UTAMA
+// ==============================
 void loop() {
   handleEncoder();
   handleButtonSW();
@@ -50,24 +60,26 @@ void loop() {
   updateDisplay();
 }
 
-// ----------------------
-// Handle Encoder Putar
-// ----------------------
-long lastPos = 0;
-
+// ==============================
+// Encoder Putar → Toggle Buka/Tutup
+// ==============================
 void handleEncoder() {
   long pos = enc.read() / 4;
 
   if (pos != lastPos) {
     lastPos = pos;
-    loketBuka = !loketBuka;  // toggle status
-    tone(BUZZER, 2000, 100);
+
+    loketBuka = !loketBuka;   // toggle loket
+    tone(BUZZER, 2000, 120);
+
+    Serial.print("Loket: ");
+    Serial.println(loketBuka ? "BUKA" : "TUTUP");
   }
 }
 
-// ----------------------
-// Tombol SW → Next
-// ----------------------
+// ==============================
+// Button SW → Panggil Nomor
+// ==============================
 void handleButtonSW() {
   static unsigned long lastPress = 0;
 
@@ -75,55 +87,53 @@ void handleButtonSW() {
     lastPress = millis();
 
     if (loketBuka) {
-      // Ambil nomor baru, simulasi
       lastNumber++;
       currentNumber = lastNumber;
-
       panggilNomor();
     } else {
-      tone(BUZZER, 500, 200);
+      tone(BUZZER, 600, 200);
     }
   }
 }
 
-// ----------------------
-// Efek pemanggilan nomor
-// ----------------------
+// ==============================
+// Efek Pemanggilan Nomor
+// ==============================
 void panggilNomor() {
-  // LED pintu berkedip cepat
+
   for (int i = 0; i < 4; i++) {
+
+    digitalWrite(LED_KUNING, HIGH);     // LED kuning nyala saat panggil nomor
     digitalWrite(LED_PINTU, HIGH);
     tone(BUZZER, 1500, 80);
     delay(120);
 
+    digitalWrite(LED_KUNING, LOW);
     digitalWrite(LED_PINTU, LOW);
     delay(120);
   }
 }
 
-// ----------------------
-// Status LED loket
-// ----------------------
+// ==============================
+// Update LED Status Loket
+// ==============================
 void updateLED() {
+
   if (loketBuka) {
     digitalWrite(LED_HIJAU, HIGH);
     digitalWrite(LED_MERAH, LOW);
-
-    if (currentNumber < lastNumber)
-      digitalWrite(LED_KUNING, HIGH);
-    else
-      digitalWrite(LED_KUNING, LOW);
-
-  } else {
+    digitalWrite(LED_KUNING, LOW);  // default mati, hanya nyala saat panggil
+  } 
+  else {
     digitalWrite(LED_HIJAU, LOW);
     digitalWrite(LED_KUNING, LOW);
     digitalWrite(LED_MERAH, HIGH);
   }
 }
 
-// ----------------------
-// OLED Display
-// ----------------------
+// ==============================
+// OLED DISPLAY
+// ==============================
 void updateDisplay() {
   oled.clearDisplay();
   oled.setCursor(0, 0);
@@ -143,6 +153,9 @@ void updateDisplay() {
   oled.display();
 }
 
+// ==============================
+// Fungsi untuk pesan awal
+// ==============================
 void displayInfo(String a, String b) {
   oled.clearDisplay();
   oled.setCursor(0, 0);
@@ -151,4 +164,3 @@ void displayInfo(String a, String b) {
   oled.println(b);
   oled.display();
 }
-
