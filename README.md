@@ -2,7 +2,7 @@
 
 ---
 
-# 🟦 **PENJELASAN LENGKAP SISTEM ANTRIAN ESP32-S3 **
+# 🟦 PENJELASAN LENGKAP SISTEM ANTRIAN ESP32-S3
 
 Sistem ini mensimulasikan **mesin antrian loket** menggunakan ESP32-S3 dengan komponen: OLED, encoder (putar + tombol), buzzer, dan tiga LED indikator.
 
