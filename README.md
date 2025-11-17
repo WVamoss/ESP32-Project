@@ -15,206 +15,219 @@ Komponen yang digunakan:
 
 ---
 
-# 🟦 **ALUR LOGIKA KERJA SISTEM**
+# 🟦 **PENJELASAN LENGKAP SISTEM ANTRIAN ESP32-S3 **
 
-## **1. Saat ESP32 Menyala**
+Sistem ini mensimulasikan **mesin antrian loket** menggunakan ESP32-S3 dengan komponen: OLED, encoder (putar + tombol), buzzer, dan tiga LED indikator.
 
-* LED merah menyala → loket dalam status **TUTUP**
-* OLED menampilkan:
+Fungsi utama sistem:
 
-  ```
-  Sistem Antrian
-  Loket TUTUP
-  ```
+* Membuka / menutup loket.
+* Mengambil nomor antrian.
+* Memanggil nomor antrian.
+* Menampilkan status dan nomor di layar.
 
----
-
-## **2. Mengubah Mode Loket (BUKA / TUTUP)**
-
-* Putar encoder → nilai encoder berubah.
-* Program mendeteksi perubahan, lalu:
-
-### Jika sebelumnya TUTUP → jadi BUKA
-
-* LED Hijau menyala
-* LED Merah mati
-* Buzzer bunyi singkat → *tanda loket dibuka*
-
-### Jika sebelumnya BUKA → jadi TUTUP
-
-* LED Merah menyala lagi
-* LED Hijau & Kuning mati
-* Buzzer bunyi
-
-**OLED otomatis memperbarui:**
-
-```
-Loket: BUKA / TUTUP
-Now: X
-Last: Y
-```
+Seluruh proses berjalan otomatis berdasarkan interaksi pengguna melalui **encoder putar** dan **tombol encoder**.
 
 ---
 
-## **3. Tekan Tombol Encoder (SW) → *Ambil Nomor + Panggil Nomor***
+# 1️⃣ **KOMPONEN DAN FUNGSINYA**
 
-Setiap kali tombol ditekan:
+## ✔ Encoder Putar (CLK, DT)
 
-### **a) Jika LOKET TUTUP**
+Digunakan untuk **mengubah status loket** antara:
 
-* Tidak boleh ambil nomor
-* Buzzer bunyi *error tone*
-* Angka tidak berubah
+* **BUKA**
+* **TUTUP**
 
-### **b) Jika LOKET BUKA**
-
-Program menjalankan proses **panggil nomor**:
-
-### (1) lastNumber bertambah
-
-Misal sebelumnya 5:
-
-```
-lastNumber = 6
-```
-
-### (2) currentNumber mengikuti lastNumber
-
-Karena sistem ini contoh sederhana, setiap kali tombol ditekan langsung dipanggil nomor:
-
-```
-currentNumber = lastNumber
-```
-
-### (3) LED Pintu berkedip
-
-Ini menggantikan servo:
-
-* LED 15 nyala–mati cepat 4 kali
-* Buzzer bunyi setiap kedipan
-
-Efeknya menyerupai:
-
-```
-"Nomor 6 silakan ke loket"
-```
-
-### (4) OLED update:
-
-```
-Now: 6
-Last: 6
-```
-
-### (5) LED Kuning
-
-LED kuning dapat menyala jika:
-
-```
-Ada nomor menunggu
-(lastNumber > currentNumber)
-```
-
-Namun karena sistem ini langsung memanggil nomor, LED kuning biasanya mati.
+Setiap kali encoder diputar → status akan di-*toggle* (berubah dari buka ke tutup atau sebaliknya), dan buzzer berbunyi singkat sebagai notifikasi.
 
 ---
 
-# 🟧 **RANGKUMAN TIAP BAGIAN**
+## ✔ Tombol Encoder (SW)
 
-## **A. Encoder → Mode Loket**
+Berfungsi sebagai **tombol pemanggilan nomor**.
 
-* Diputar → mengubah status BUKA / TUTUP
-* Buzzer bunyi
-* OLED & LED status ikut berubah
+Jika ditekan:
 
----
+* Bila **loket TUTUP** → buzzer bunyi *error* (nada rendah).
+* Bila **loket BUKA**:
 
-## **B. Tombol Encoder (SW) → Ambil Nomor**
-
-* Jika TUTUP → buzzer error
-* Jika BUKA:
-
-  * Tambah nomor
-  * Panggil nomor (simulasi)
-  * Update OLED
-  * LED pintu berkedip (simulasi servo)
-  * Buzzer bunyi
+  * Nomor antrian bertambah (`lastNumber++`)
+  * Nomor yang dipanggil diset (`currentNumber = lastNumber`)
+  * Sistem menjalankan animasi pemanggilan (LED & buzzer).
 
 ---
 
-## **C. OLED Menampilkan Info**
+## ✔ OLED Display (SDA 38, SCL 39)
 
-OLED selalu menampilkan:
+Menampilkan:
 
-1. Status: BUKA / TUTUP
-2. Nomor yang sedang dipanggil (`currentNumber`)
-3. Nomor terakhir (`lastNumber`)
+* Status Loket (BUKA / TUTUP)
+* Nomor Sekarang: *currentNumber*
+* Nomor Terakhir: *lastNumber*
 
-Diupdate setiap loop.
-
----
-
-## **D. LED Status Loket**
-
-* **Merah = Loket Tutup**
-* **Hijau = Loket Buka**
-* **Kuning = Ada antrian menunggu** (opsional)
+Display diperbarui **setiap loop**.
 
 ---
 
-## **E. LED Pintu Loket (GPIO 15)**
+## ✔ LED Indikator
 
-Ini pengganti servo.
+### 🟢 **LED Hijau**
 
-* Berkedip cepat = pintu terbuka
-* Mati = pintu normal
+Menunjukkan **loket BUKA**.
 
----
+### 🔴 **LED Merah**
 
-# 🟩 **ILUSTRASI CERITA / SCENARIO**
+Menunjukkan **loket TUTUP**.
 
-### **1. Petugas membuka loket**
+### 🟡 **LED Kuning**
 
-Putar encoder → Loket BUKA
-LED Hijau menyala, OLED update.
+Indikator **proses pemanggilan nomor**.
 
----
+👉 LED kuning **hanya** menyala saat sistem sedang memanggil nomor.
+Dalam keadaan lain → **mati**.
 
-### **2. Pengunjung menekan tombol**
-
-SW ditekan → mesin ambil nomor
-Misalnya:
-
-* lastNumber = 1
-* currentNumber = 1
-* LED pintu berkedip (panggilan)
-* Buzzer bunyi
+(Detail penjelasan LED kuning ada di bagian 4.)
 
 ---
 
-### **3. Pengunjung berikutnya datang**
+## ✔ LED Pintu (Pengganti Servo)
 
-SW ditekan lagi:
+LED pada pin 15 berfungsi untuk mensimulasikan pergerakan pintu loket.
 
-* lastNumber = 2
-* currentNumber = 2
-* LED pintu berkedip lagi
+Nyala–mati cepat saat pemanggilan nomor.
 
 ---
 
-### **4. Loket ditutup lagi**
+## ✔ Buzzer
 
-Putar encoder → Loket TUTUP
-Semua efek dimatikan.
+Bunyi dalam dua kondisi:
+
+1. **Loket dibuka/diclose** (bunyi pendek)
+2. **Nomor dipanggil** (bunyi cepat beberapa kali)
+3. **Loket tutup tapi tombol ditekan** → bunyi error (nada rendah)
 
 ---
 
-# 🟦 Kalau mau, saya bisa tambahkan:
+# 2️⃣ **ALUR KERJA SISTEM**
 
-* antrian dengan queue beneran (queue RTOS)
-* tombol ambil nomor terpisah
-* suara buzzer kaya suara counter asli
-* mode prioritas (VIP / reguler)
-* tampilan OLED lebih keren
-* multi-loket (loket 1,2,3)
-�
+## A. **Mengubah Status Loket (Putar Encoder)**
+
+Ketika encoder diputar:
+
+* Posisi encoder berubah → status *loketBuka* di-*toggle*
+* Bila loket berubah menjadi **BUKA**:
+
+  * LED Hijau menyala
+  * LED Merah mati
+  * Buzzer beep
+* Bila loket berubah menjadi **TUTUP**:
+
+  * LED Merah menyala
+  * LED Hijau mati
+  * Buzzer beep
+  * LED kuning selalu mati
+
+OLED langsung memperbarui tampilan status.
+
+---
+
+## B. **Memanggil Nomor Antrian (Tekan Tombol SW)**
+
+Ketika tombol ditekan:
+
+### 🔴 Jika loket TUTUP:
+
+* Tidak boleh memanggil nomor
+* Buzzer bunyi *500 Hz* selama 200ms
+* OLED tetap menampilkan “TUTUP”
+
+### 🟢 Jika loket BUKA:
+
+1. Tambah nomor antrian (`lastNumber++`)
+2. Set nomor yang dipanggil (`currentNumber = lastNumber`)
+3. Panggil animasi:
+
+   * LED kuning berkedip cepat
+   * LED pintu berkedip cepat
+   * buzzer bunyi pendek beberapa kali
+4. OLED menampilkan:
+
+   ```
+   Loket: BUKA
+   Now: <currentNumber>
+   Last: <lastNumber>
+   ```
+
+---
+
+# 3️⃣ **ANIMASI PEMANGGILAN**
+
+Fungsi:
+
+```cpp
+panggilNomor();
+```
+
+melakukan animasi berikut sebanyak 4 kali:
+
+1. LED Kuning → ON
+2. LED Pintu → ON
+3. Buzzer → bunyi 1500 Hz singkat
+4. Delay 120 ms
+5. Kedua LED mati
+6. Delay 120 ms
+
+Animasi ini memberi efek visual & suara yang jelas bahwa nomor sedang dipanggil.
+
+---
+
+# 4️⃣ 🟡 **FUNGSI LENGKAP LED KUNING (Versi Terbaru)**
+
+LED kuning sekarang berfungsi sebagai:
+
+> **INDIKATOR BAHWA SISTEM SEDANG MEMANGGIL NOMOR ANTRIAN**
+
+Bukan lagi untuk antrian pending.
+Fungsinya fokus pada *calling indicator*.
+
+### LED Kuning menyala dan berkedip hanya saat:
+
+* Tombol ditekan → nomor dipanggil
+* Sistem mengeksekusi animasi panggilan
+
+### LED Kuning mati ketika:
+
+* Loket tutup
+* Loket buka tetapi belum ada panggilan
+* Animasi panggilan selesai
+
+Ini memberikan efek yang lebih realistis seperti mesin antrian di rumah sakit/kantor pelayanan.
+
+---
+
+# 5️⃣ **ALUR STATUS LED**
+
+| Kondisi Sistem    | Hijau | Kuning    | Merah |
+| ----------------- | ----- | --------- | ----- |
+| Loket TUTUP       | OFF   | OFF       | ON    |
+| Loket BUKA (idle) | ON    | OFF       | OFF   |
+| Nomor dipanggil   | ON    | **Blink** | OFF   |
+| Panggilan selesai | ON    | OFF       | OFF   |
+
+---
+
+# 6️⃣ **RINGKASAN CONCISE (SIAP UNTUK LAPORAN)**
+
+* Encoder putar → ganti status loket (BUKA/TUTUP).
+* Encoder button → memanggil nomor baru.
+* Tambah nomor dilakukan otomatis (`lastNumber++`).
+* OLED menampilkan status dan nomor.
+* LED hijau = buka, LED merah = tutup.
+* LED kuning = indikator panggilan nomor (blink).
+* LED pintu = simulasi servo (blink saat panggilan).
+* Buzzer memberi umpan balik suara.
+
+---
+
+
